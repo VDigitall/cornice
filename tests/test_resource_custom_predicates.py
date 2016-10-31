@@ -1,23 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
-import json
-
 from pyramid import testing
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
-from pyramid.security import Allow
-from pyramid.httpexceptions import (
-    HTTPOk, HTTPForbidden
-)
 from webtest import TestApp
 
 from cornice.resource import resource
 from cornice.resource import view
-from cornice.schemas import CorniceSchema
-from cornice.tests import validationapp
 from cornice.tests.support import TestCase, CatchErrors
-from cornice.tests.support import dummy_factory
 
 EMPLOYEES_DB = {
     1: {'name': 'Tony Flash', 'position': 'topmanager', 'salary': 30000},
@@ -49,27 +40,23 @@ class EManager(object):
         self.request = request
         self.context = context
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def collection_get(self):
-        return {'c_get': 'Topmanagers'}
+        return ['Topmanagers list get']
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def get(self):
         return {'get': 'Topmanagers'}
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def collection_post(self):
-        return {'c_post': 'Topmanagers'}
+        return ['Topmanagers list post']
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def patch(self):
         return {'patch': 'Topmanagers'}
 
-    @view(renderer='json', accept='text/json')
-    def collection_patch(self):
-        return {'c_patch': 'Topmanagers'}
-
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def put(self):
         return {'put': 'Topmanagers'}
 
@@ -82,27 +69,23 @@ class ESupervisor(object):
         self.request = request
         self.context = context
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def collection_get(self):
-        return {'c_get': 'Supervisors'}
+        return ['Supervisors list get']
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def get(self):
         return {'get': 'Supervisors'}
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def collection_post(self):
-        return {'c_post': 'Supervisors'}
+        return ['Supervisors list post']
 
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def patch(self):
         return {'patch': 'Supervisors'}
 
-    @view(renderer='json', accept='text/json')
-    def collection_patch(self):
-        return {'c_patch': 'Supervisors'}
-
-    @view(renderer='json', accept='text/json')
+    @view(renderer='json', accept='application/json')
     def put(self):
         return {'put': 'Supervisors'}
 
@@ -120,37 +103,72 @@ class TestCustomPredicates(TestCase):
         self.authn_policy = AuthTktAuthenticationPolicy('$3kr1t')
         self.config.set_authentication_policy(self.authn_policy)
         self.config.add_route_predicate('position', employeeType)
-        self.config.scan("cornice.tests.test_resource_with_custom_predicates")
+        self.config.scan("tests.test_resource_custom_predicates")
         self.app = TestApp(CatchErrors(self.config.make_wsgi_app()))
 
     def tearDown(self):
         testing.tearDown()
 
-    def test_get_resource_with_predicates(self):
+    def test_get_resource_predicates(self):
         # Tests for resource with name 'Supervisors'
-        res = self.app.get('/company/employees', {'position': 'supervisor'}).json
-        self.assertEqual(res['cget'], 'Supervisors')
-        res = self.app.get('/company/employees/1', {'position': 'supervisor'}).json
+        res = self.app.get('/company/employees?position=supervisor').json
+        self.assertEqual(res[0], 'Supervisors list get')
+        res = self.app.get('/company/employees/2?position=supervisor').json
         self.assertEqual(res['get'], 'Supervisors')
-        res = self.app.post('/company/employees', {'name': 'Jimmy Arrow', 'position': 'supervisor', 'salary': 50000}).json
-        self.assertEqual(res['post'], 'Supervisors')
-        res = self.app.patch('/company/employees', {'id': 2, 'name': 'Jimmy Arrow', 'position': 'supervisor', 'salary': 55000}).json
-        self.assertEqual(res['cpatch'], 'Supervisors')
-        res = self.app.patch('/company/employees/2', {'name': 'Jimmy Arrow', 'position': 'supervisor', 'salary': 60000}).json
+
+        # Tests for resource with name 'Topmanagers'
+        res = self.app.get('/company/employees?position=topmanager').json
+        self.assertEqual(res[0], 'Topmanagers list get')
+        res = self.app.get('/company/employees/1?position=topmanager').json
+        self.assertEqual(res['get'], 'Topmanagers')
+
+    def test_post_resource_predicates(self):
+        # Tests for resource with name 'Supervisors'
+        supervisor_data = {
+            'name': 'Jimmy Arrow',
+            'position': 'supervisor',
+            'salary': 50000
+        }
+        res = self.app.post('/company/employees', supervisor_data).json
+        self.assertEqual(res[0], 'Supervisors list post')
+
+        # Tests for resource with name 'Topmanagers'
+        topmanager_data = {
+            'name': 'Jimmy Arrow',
+            'position': 'topmanager',
+            'salary': 30000
+        }
+        res = self.app.post('/company/employees', topmanager_data).json
+        self.assertEqual(res[0], 'Topmanagers list post')
+
+    def test_patch_resource_predicates(self):
+        # Tests for resource with name 'Supervisors'
+        res = self.app.patch(
+            '/company/employees/2?position=supervisor',
+            {'salary': 1001}
+        ).json
         self.assertEqual(res['patch'], 'Supervisors')
-        res = self.app.put('/company/employees/2', {'position': 'supervisor', 'salary': 53000}).json
+
+        # Tests for resource with name 'Topmanagers'
+        res = self.app.patch(
+            '/company/employees/1?position=topmanager',
+            {'salary': 2002}
+        ).json
+        self.assertEqual(res['patch'], 'Topmanagers')
+
+    def test_put_resource_predicates(self):
+        # Tests for resource with name 'Supervisors'
+        supervisor_data = {
+            'position': 'supervisor',
+            'salary': 53000
+        }
+        res = self.app.put('/company/employees/2', supervisor_data).json
         self.assertEqual(res['put'], 'Supervisors')
 
         # Tests for resource with name 'Topmanagers'
-        res = self.app.get('/company/employees', {'position': 'topmanager'}).json
-        self.assertEqual(res['cget'], 'Topmanagers')
-        res = self.app.get('/company/employees/1', {'position': 'topmanager'}).json
-        self.assertEqual(res['get'], 'Topmanagers')
-        res = self.app.post('/company/employees', {'name': 'Jimmy Arrow', 'position': 'topmanager', 'salary': 30000}).json
-        self.assertEqual(res['post'], 'Topmanagers')
-        res = self.app.patch('/company/employees', {'id': 2, 'name': 'Jimmy Arrow', 'position': 'topmanager', 'salary': 35000}).json
-        self.assertEqual(res['cpatch'], 'Topmanagers')
-        res = self.app.patch('/company/employees/2', {'name': 'Jimmy Arrow', 'position': 'topmanager', 'salary': 40000}).json
-        self.assertEqual(res['patch'], 'Topmanagers')
-        res = self.app.put('/company/employees/2', {'position': 'topmanager', 'salary': 33000}).json
+        topmanager_data = {
+            'position': 'topmanager',
+            'salary': 33000
+        }
+        res = self.app.put('/company/employees/1', topmanager_data).json
         self.assertEqual(res['put'], 'Topmanagers')
