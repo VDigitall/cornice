@@ -11,7 +11,6 @@ from pyramid.httpexceptions import (
     HTTPOk, HTTPForbidden
 )
 from webtest import TestApp
-import mock
 
 from cornice.resource import resource
 from cornice.resource import view
@@ -20,12 +19,11 @@ from cornice.tests import validationapp
 from cornice.tests.support import TestCase, CatchErrors
 from cornice.tests.support import dummy_factory
 
-import pdb
-
-EMPLOYEES = {
+EMPLOYEES_DB = {
     1: {'name': 'Tony Flash', 'position': 'topmanager', 'salary': 30000},
     2: {'name': 'Jimmy Arrow', 'position': 'supervisor', 'salary': 50000}
 }
+
 
 class employeeType(object):
     def __init__(self, val, config):
@@ -51,27 +49,27 @@ class EManager(object):
         self.request = request
         self.context = context
 
-    @view()
+    @view(renderer='json', accept='text/json')
     def collection_get(self):
-        return {'employees': list(EMPLOYEES), 'cget': 'Topmanagers'}
+        return {'c_get': 'Topmanagers'}
 
-    @view()
-    @view()
+    @view(renderer='json', accept='text/json')
     def get(self):
-        employee = EMPLOYEES.get(int(self.request.matchdict['id']))
-        employee['get'] = 'Topmanagers'
-        return employee
+        return {'get': 'Topmanagers'}
 
     @view(renderer='json', accept='text/json')
     def collection_post(self):
-        return {'post': 'Topmanagers'}
+        return {'c_post': 'Topmanagers'}
 
+    @view(renderer='json', accept='text/json')
     def patch(self):
         return {'patch': 'Topmanagers'}
 
+    @view(renderer='json', accept='text/json')
     def collection_patch(self):
-        return {'cpatch': 'Topmanagers'}
+        return {'c_patch': 'Topmanagers'}
 
+    @view(renderer='json', accept='text/json')
     def put(self):
         return {'put': 'Topmanagers'}
 
@@ -84,27 +82,27 @@ class ESupervisor(object):
         self.request = request
         self.context = context
 
-    @view()
+    @view(renderer='json', accept='text/json')
     def collection_get(self):
-        return {'employees': list(EMPLOYEES), 'cget': 'Supervisors'}
+        return {'c_get': 'Supervisors'}
 
-    @view()
-    @view()
+    @view(renderer='json', accept='text/json')
     def get(self):
-        employee = EMPLOYEES.get(int(self.request.matchdict['id']))
-        employee['get'] = 'Supervisors'
-        return employee
+        return {'get': 'Supervisors'}
 
     @view(renderer='json', accept='text/json')
     def collection_post(self):
-        return {'post': 'Supervisors'}
+        return {'c_post': 'Supervisors'}
 
+    @view(renderer='json', accept='text/json')
     def patch(self):
         return {'patch': 'Supervisors'}
 
+    @view(renderer='json', accept='text/json')
     def collection_patch(self):
-        return {'cpatch': 'Supervisors'}
+        return {'c_patch': 'Supervisors'}
 
+    @view(renderer='json', accept='text/json')
     def put(self):
         return {'put': 'Supervisors'}
 
